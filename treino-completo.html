@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Protocolo · Braço Frontal · Ombro · Tríceps</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@700;800;900&display=swap');
+  :root{
+    --bg:#0b0b0d; --panel:#151519; --panel2:#1c1c22; --line:#29292f;
+    --txt:#f3f3f5; --mut:#87878f; --dim:#5a5a63;
+    --accent:#ff3b2f; --go:#22c55e; --gobg:#0f2a19; --rest:#3b82f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--txt);font-family:'Archivo',system-ui,sans-serif;padding-bottom:150px;line-height:1.4}
+
+  /* ---------- top bar fixa: tempo total ---------- */
+  #topbar{
+    position:sticky;top:0;z-index:40;background:rgba(11,11,13,.92);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:14px;
+  }
+  #topbar .brand{font-family:'Archivo Expanded';font-weight:900;font-size:13px;letter-spacing:.02em;text-transform:uppercase}
+  #topbar .brand em{color:var(--accent);font-style:normal}
+  .clock{margin-left:auto;display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+  .clock .lab{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .clock .val{font-family:'Archivo Expanded';font-weight:800;font-size:18px}
+  .clock button{background:var(--accent);border:0;color:#fff;width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer;font-weight:800}
+  .clock button.paused{background:var(--go)}
+
+  /* ---------- seletor de dias ---------- */
+  #days{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none}
+  #days::-webkit-scrollbar{display:none}
+  .day{
+    flex:0 0 auto;padding:9px 15px;border-radius:11px;background:var(--panel);border:1px solid var(--line);
+    cursor:pointer;transition:.15s;min-width:74px;text-align:center
+  }
+  .day.active{border-color:var(--tabcol);background:linear-gradient(180deg,color-mix(in srgb,var(--tabcol) 22%,var(--panel)),var(--panel))}
+  .day .dn{font-size:9px;color:var(--dim);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .day .dt{font-family:'Archivo Expanded';font-weight:800;font-size:13px;margin-top:2px}
+  .day.active .dt{color:var(--tabcol)}
+
+  /* ---------- header do dia ---------- */
+  .dayhead{padding:18px 18px 6px}
+  .dayhead .eye{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--daycol)}
+  .dayhead h1{font-family:'Archivo Expanded';font-weight:900;font-size:26px;text-transform:uppercase;line-height:1;margin:5px 0}
+  .dayhead .stats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+  .dayhead .stats div{font-size:11px;color:var(--mut)}
+  .dayhead .stats b{display:block;font-family:'Archivo Expanded';font-size:17px;color:var(--txt);font-weight:800}
+
+  /* ---------- card exercício ---------- */
+  .ex{background:var(--panel);margin:11px 14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:opacity .3s}
+  .ex.done{opacity:.5}
+  .ex-head{display:flex;gap:13px;padding:14px}
+  .ill{width:76px;height:76px;flex-shrink:0;border-radius:11px;background:var(--panel2);border:1px solid var(--line)}
+  .ex-meta{flex:1;min-width:0}
+  .ex-n{font-weight:800;font-size:15.5px;line-height:1.12}
+  .ex-tag{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);padding:2px 7px;border-radius:20px}
+  .ex-sch{color:var(--mut);font-size:12px;margin-top:7px;font-weight:600}
+  .ex-sch b{color:var(--txt)}
+  .star{color:#ffd23b}
+
+  .toggle-exe{margin:0 14px 12px;font-size:11px;color:var(--daycol);background:none;border:1px solid var(--line);
+    padding:7px 12px;border-radius:9px;cursor:pointer;font-family:inherit;font-weight:700;letter-spacing:.03em}
+  .exe{margin:0 14px 12px;padding:12px;background:var(--panel2);border-radius:11px;font-size:12.5px;display:none}
+  .exe.open{display:block}
+  .exe .row{margin-bottom:8px}
+  .exe .row:last-child{margin-bottom:0}
+  .exe .k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:800;margin-bottom:2px}
+  .exe .v{color:#d7d7db;line-height:1.5}
+  .exe .v.dica{color:#ffd8a8}
+
+  /* ---------- séries ---------- */
+  .sets{padding:0 14px 14px;display:flex;flex-direction:column;gap:7px}
+  .setrow{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:11px;padding:10px 12px;transition:.15s}
+  .setrow.active{border-color:var(--go);background:var(--gobg)}
+  .setrow.done{border-color:color-mix(in srgb,var(--go) 40%,transparent)}
+  .setrow .idx{font-family:'Archivo Expanded';font-weight:800;font-size:13px;width:52px;color:var(--mut)}
+  .setrow.done .idx{color:var(--go)}
+  .setrow .target{font-size:12px;color:var(--dim);flex:1}
+  .setrow .stimer{font-variant-numeric:tabular-nums;font-family:'Archivo Expanded';font-weight:800;font-size:16px;color:var(--mut);min-width:52px;text-align:right}
+  .setrow.active .stimer{color:var(--go)}
+  .setrow .act{border:0;border-radius:9px;padding:9px 12px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;min-width:74px;transition:.15s}
+  .act.start{background:var(--go);color:#04120a}
+  .act.finish{background:var(--accent);color:#fff}
+  .act.redo{background:transparent;color:var(--dim);border:1px solid var(--line)}
+  .act:active{transform:scale(.95)}
+
+  /* ---------- barra descanso ---------- */
+  #rest{position:fixed;left:0;right:0;bottom:0;z-index:60;background:linear-gradient(180deg,#1a1d24,#101216);
+    border-top:2px solid var(--rest);transform:translateY(120%);transition:transform .32s cubic-bezier(.2,.7,.3,1);
+    padding:15px 18px calc(20px + env(safe-area-inset-bottom))}
+  #rest.show{transform:translateY(0)}
+  .rh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+  .rh .l{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);font-weight:800}
+  #rnum{font-family:'Archivo Expanded';font-weight:900;font-size:38px;line-height:1;font-variant-numeric:tabular-nums;color:var(--rest)}
+  #rnum.low{color:var(--accent)}
+  .rtrack{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:13px}
+  #rfill{height:100%;width:100%;background:var(--rest);transition:width 1s linear}
+  .rbtns{display:flex;gap:9px}
+  .rbtns button{flex:1;padding:13px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);
+    color:var(--txt);font-weight:800;font-size:13px;font-family:inherit;cursor:pointer}
+  .rbtns button.main{background:var(--rest);border-color:var(--rest);color:#fff}
+  .rbtns button:active{transform:scale(.97)}
+
+  /* ---------- banner fim ---------- */
+  #fin{margin:18px 14px 0;padding:24px;border-radius:16px;text-align:center;display:none;
+    background:linear-gradient(135deg,var(--gobg),var(--bg));border:1px solid var(--go)}
+  #fin.show{display:block;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+  #fin h2{font-family:'Archivo Expanded';font-size:22px;text-transform:uppercase;color:var(--go)}
+  #fin p{color:var(--mut);font-size:13px;margin-top:6px}
+  #fin .big{font-family:'Archivo Expanded';font-size:30px;color:var(--txt);margin-top:10px;font-variant-numeric:tabular-nums}
+
+  .footer-reset{display:block;margin:20px auto 0;background:none;border:1px solid var(--line);color:var(--dim);
+    padding:10px 20px;border-radius:22px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:700}
+  @media(prefers-reduced-motion){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand">Protocolo <em>Frontal</em></div>
+  <div class="clock">
+    <div>
+      <div class="lab">Tempo total</div>
+      <div class="val" id="totalClock">00:00</div>
+    </div>
+    <button id="clockBtn" onclick="toggleClock()">▶</button>
+  </div>
+</div>
+
+<div id="days"></div>
+<div class="dayhead" id="dayhead"></div>
+<div id="app"></div>
+
+<div id="fin">
+  <h2>Treino concluído 💪</h2>
+  <p>Braço frontal, ombro e tríceps fechados. Descanso e proteína agora.</p>
+  <div class="big" id="finTime">00:00</div>
+</div>
+
+<button class="footer-reset" onclick="resetDay()">Reiniciar dia</button>
+
+<div id="rest">
+  <div class="rh"><span class="l" id="restLab">Descanso</span><span id="rnum">90</span></div>
+  <div class="rtrack"><div id="rfill"></div></div>
+  <div class="rbtns">
+    <button onclick="addRest(15)">+15s</button>
+    <button onclick="addRest(-15)">−15s</button>
+    <button class="main" onclick="skipRest()">Pronto</button>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   BASE DE DADOS DO TREINO — 5 dias (PPL + Ombro/Braço + Upper)
+   Foco: braço frontal (cabeça longa bíceps + braquial), ombro, tríceps
+   Doutrina hipertrofia: 10-20 séries/grupo/semana, frequência 2x p/ foco,
+   RIR 0-2 nas últimas séries, cadência controlada, amplitude completa.
+   =================================================================== */
+const DIAS = [
+  {
+    id:"push-a", nome:"Push A", sub:"Peito · Ombro · Tríceps", cor:"#ff3b2f",
+    ex:[
+      {n:"Supino reto com halteres", alvo:"peito", s:4, reps:"6-8", rest:120,
+       exe:"Deite no banco, halteres na linha do peito, cotovelos ~45° do tronco. Empurre até quase estender, desça controlado 2-3s.",
+       dica:"Não deixe o cotovelo abrir 90° (estressa ombro). Aperte o peito no topo sem bater os halteres."},
+      {n:"Supino inclinado 30° com halteres", alvo:"peito superior", s:3, reps:"8-10", rest:90,
+       exe:"Banco a 30°, mesma pegada. Foco na porção clavicular do peito.",
+       dica:"Inclinação maior que 45° rouba pro ombro. Mantenha 30° pra pegar peito de cima."},
+      {n:"Desenvolvimento militar com halteres", alvo:"ombro", s:4, reps:"8-10", rest:120,
+       exe:"Sentado com apoio, halteres na altura das orelhas, empurre pra cima sem travar o cotovelo. Desça até 90°.",
+       dica:"Não arqueie a lombar. Deltoide anterior — encha o ombro visto de frente."},
+      {n:"Elevação lateral", alvo:"ombro lateral", s:4, reps:"12-15", rest:60,
+       exe:"Em pé, leve halter mínimo, suba até a linha do ombro liderando pelo cotovelo. Desça 2s.",
+       dica:"Mindinho levemente acima do polegar. Dá largura ao ombro — moldura do braço frontal."},
+      {n:"Tríceps testa (barra W)", alvo:"tríceps", s:3, reps:"8-10", rest:90,
+       exe:"Deitado, barra desce até a testa flexionando só o cotovelo. Cabeça longa alongada.",
+       dica:"Cotovelo apontado pra frente e fixo. Não deixe abrir pros lados."},
+      {n:"Tríceps corda na polia", alvo:"tríceps", s:3, reps:"12-15", rest:60,
+       exe:"Cotovelo colado ao corpo, estenda abrindo a corda no final. Segure 1s embaixo.",
+       dica:"Abra a corda no fim pra pegar a cabeça lateral. Pico de contração."},
+    ]
+  },
+  {
+    id:"pull", nome:"Pull", sub:"Costas · Bíceps frontal", cor:"#ff8c1a",
+    ex:[
+      {n:"Barra fixa / Puxada alta", alvo:"dorsal", s:4, reps:"8-10", rest:120,
+       exe:"Pegada pronada aberta. Puxe com o cotovelo até o peito, escápula pra baixo. Desça controlado.",
+       dica:"Peito pra cima, não jogue o tronco. Sinta a dorsal, não o antebraço."},
+      {n:"Remada curvada com barra", alvo:"dorsal/meio das costas", s:4, reps:"8-10", rest:120,
+       exe:"Tronco ~45°, puxe a barra ao umbigo, aperte a escápula. Desça sem arredondar a lombar.",
+       dica:"Espinha neutra. Puxe com o cotovelo pra trás, não com a mão."},
+      {n:"Remada unilateral (serrote)", alvo:"dorsal", s:3, reps:"10-12", rest:90,
+       exe:"Joelho e mão no banco, puxe o halter à cintura, amplitude total alongando embaixo.",
+       dica:"Não gire o tronco pra ajudar. Movimento limpo, aperta em cima."},
+      {n:"Rosca direta com barra", alvo:"bíceps", s:4, reps:"6-8", rest:120,
+       exe:"Cotovelo travado ao lado do corpo, suba sem balançar. Excêntrica 2-3s.",
+       dica:"Base do treino de braço. Pesado mas sem roubar com a lombar."},
+      {n:"Rosca inclinada com halteres", alvo:"bíceps cabeça longa", s:4, reps:"10-12", rest:90,
+       exe:"Banco reclinado ~60°, braço cai atrás do tronco, role o punho supinando na subida.",
+       dica:"⭐ O exercício-chave do pico frontal. O braço atrás alonga a cabeça longa — volume visto de frente."},
+      {n:"Rosca martelo", alvo:"braquial/braquiorradial", s:3, reps:"12-15", rest:75,
+       exe:"Punho neutro fixo, suba controlado. Pega o braquial, embaixo do bíceps.",
+       dica:"O braquial empurra o bíceps pra cima = braço mais alto de frente. Não subestime."},
+    ]
+  },
+  {
+    id:"legs", nome:"Legs", sub:"Pernas · Panturrilha", cor:"#22c55e",
+    ex:[
+      {n:"Agachamento livre / Smith", alvo:"quadríceps/glúteo", s:4, reps:"8-10", rest:150,
+       exe:"Pés na largura do ombro, desça até a coxa paralela ou abaixo, joelho na linha do pé.",
+       dica:"Peito erguido, empurre o chão. Desça controlado, suba com força."},
+      {n:"Leg press 45°", alvo:"quadríceps", s:4, reps:"10-12", rest:120,
+       exe:"Pés no meio da plataforma, desça até 90° do joelho sem tirar o quadril do apoio.",
+       dica:"Não trave o joelho no topo. Amplitude boa sem descolar a lombar."},
+      {n:"Cadeira extensora", alvo:"quadríceps", s:3, reps:"12-15", rest:75,
+       exe:"Estenda até em cima, segure 1s, desça 2s. Pico de contração no quadríceps.",
+       dica:"Ótimo pra finalizar o quadríceps com bombeamento e tensão."},
+      {n:"Mesa flexora", alvo:"posterior de coxa", s:4, reps:"10-12", rest:90,
+       exe:"Flexione o joelho puxando o calcanhar ao glúteo, controle a volta.",
+       dica:"Não levante o quadril da mesa. Sinta o posterior alongar embaixo."},
+      {n:"Panturrilha em pé", alvo:"panturrilha", s:4, reps:"12-15", rest:60,
+       exe:"Suba na ponta do pé o máximo, segure 1s no topo, desça alongando total.",
+       dica:"Amplitude completa e pausa em cima. Panturrilha responde a alongamento."},
+    ]
+  },
+  {
+    id:"ombro-braco", nome:"Ombro + Braço", sub:"Especialização · foco frontal", cor:"#3b82f6",
+    ex:[
+      {n:"Desenvolvimento Arnold", alvo:"ombro anterior", s:4, reps:"10-12", rest:90,
+       exe:"Comece com halteres à frente, palmas pra você; gire supinando enquanto sobe.",
+       dica:"A rotação recruta mais o deltoide anterior — ombro cheio de frente."},
+      {n:"Elevação frontal com anilha/halter", alvo:"deltoide anterior", s:3, reps:"12-15", rest:60,
+       exe:"Suba o peso à frente até a altura dos olhos, desça 2s. Sem balançar.",
+       dica:"Deltoide anterior é o que aparece de frente. Movimento limpo, sem impulso."},
+      {n:"Elevação lateral", alvo:"ombro lateral", s:4, reps:"12-15", rest:60,
+       exe:"Lidere pelo cotovelo, suba à linha do ombro, desça controlado.",
+       dica:"Dá a largura que emoldura o braço frontal. Drop na última série."},
+      {n:"Rosca Scott (banco 45°)", alvo:"bíceps ventre", s:4, reps:"8-10", rest:90,
+       exe:"Braço apoiado no banco, estenda embaixo sem soltar a tensão, suba ao topo.",
+       dica:"Isola o bíceps na fase alongada. Não estenda 100% de estalo — proteja o cotovelo."},
+      {n:"Rosca inclinada com halteres", alvo:"bíceps cabeça longa", s:3, reps:"10-12", rest:75,
+       exe:"Banco a 60°, braço atrás do tronco, supine na subida.",
+       dica:"⭐ De novo o foco frontal. Duas vezes na semana = pico cresce mais rápido."},
+      {n:"Rosca concentrada", alvo:"bíceps pico", s:3, reps:"12-15", rest:60,
+       exe:"Cotovelo apoiado na coxa, suba isolado, segure 1s no pico.",
+       dica:"Finaliza com bombeamento máximo. Aperta forte no topo."},
+      {n:"Tríceps francês com halter", alvo:"tríceps cabeça longa", s:3, reps:"10-12", rest:75,
+       exe:"Sentado, halter atrás da cabeça, estenda pra cima. Cabeça longa alongada.",
+       dica:"A cabeça longa dá volume ao braço. Overhead alonga mais que qualquer outro."},
+    ]
+  },
+  {
+    id:"upper", nome:"Push B / Upper", sub:"Peito · Ombro · Braço bomba", cor:"#a855f7",
+    ex:[
+      {n:"Supino reto com barra", alvo:"peito", s:4, reps:"6-8", rest:120,
+       exe:"Pegada pouco mais que ombro, desça à linha do mamilo, empurre com o peito.",
+       dica:"Escápula retraída, pés firmes. Controle a descida."},
+      {n:"Crucifixo na polia / crossover", alvo:"peito", s:3, reps:"12-15", rest:60,
+       exe:"Braço levemente flexionado, junte à frente apertando o peito, abra alongando.",
+       dica:"Pega o alongamento e a contração. Fecha o peito no centro."},
+      {n:"Desenvolvimento militar máquina", alvo:"ombro", s:3, reps:"10-12", rest:90,
+       exe:"Empurre pra cima sem travar, desça a 90°. Ombro cheio.",
+       dica:"Constância na tensão. Bom pra volume seguro no ombro."},
+      {n:"Elevação lateral (drop set final)", alvo:"ombro lateral", s:3, reps:"12-15", rest:60,
+       exe:"Última série: falhe, reduza o peso e continue (drop set).",
+       dica:"Bombeamento máximo pra largura. O drop na última encerra o ombro."},
+      {n:"Rosca direta na polia", alvo:"bíceps", s:3, reps:"12-15", rest:60,
+       exe:"Tensão constante do cabo, cotovelo fixo, aperta no topo.",
+       dica:"A polia mantém tensão até embaixo, diferente do peso livre. Bomba o braço."},
+      {n:"Tríceps na polia (barra ou corda)", alvo:"tríceps", s:4, reps:"12-15", rest:60,
+       exe:"Cotovelo colado, estenda total, segure 1s embaixo.",
+       dica:"Alto volume final pra fechar o braço com sangue. Capriche no pico."},
+    ]
+  }
+];
+</script>
+<script>
+/* ============ ILUSTRAÇÕES SVG (offline) ============ */
+const W='#f2f2f4', A='#ff3b2f', M='#55555f', SK='#3a3a42';
+function svg(inner){return "data:image/svg+xml;utf8,"+encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="11" fill="#1c1c22"/>'+inner+'</svg>');}
+const hd=(x,y)=>`<circle cx="${x}" cy="${y}" r="6" fill="none" stroke="${W}" stroke-width="2.5"/>`;
+const ln=(a,b,c,d,col=W,w=3)=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`;
+const bar=(a,b,c,d)=>ln(a,b,c,d,M,4);
+const pl=(x,y)=>`<circle cx="${x}" cy="${y}" r="7" fill="${M}"/>`;
+const db=(x,y)=>`<rect x="${x-5}" y="${y-4}" width="10" height="8" rx="2" fill="${M}"/>`;
+const arr=(a,b,c,d)=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${A}" stroke-width="2" stroke-dasharray="3 3"/><circle cx="${c}" cy="${d}" r="2.5" fill="${A}"/>`;
+const musc=(x,y)=>`<circle cx="${x}" cy="${y}" r="4.5" fill="${A}" opacity=".85"/>`;
+
+const ART={
+  "peito":svg(hd(50,22)+ln(50,28,50,60)+ln(50,33,32,44)+ln(32,44,40,34)+ln(50,33,68,44)+ln(68,44,60,34)+db(40,33)+db(60,33)+musc(43,38)+musc(57,38)+arr(30,44,44,34)+arr(70,44,56,34)),
+  "peito superior":svg(`<line x1="24" y1="74" x2="60" y2="34" stroke="${M}" stroke-width="5" stroke-linecap="round"/>`+hd(54,32)+ln(50,38,34,66)+ln(48,44,34,36)+ln(48,44,60,34)+db(34,34)+db(60,32)+musc(46,40)+arr(34,34,48,42)),
+  "ombro":svg(hd(50,26)+ln(50,32,50,66)+ln(50,36,34,30)+ln(34,30,34,42)+ln(50,36,66,30)+ln(66,30,66,42)+db(34,42)+db(66,42)+musc(42,34)+musc(58,34)+arr(34,44,34,30)+arr(66,44,66,30)),
+  "ombro anterior":svg(hd(50,26)+ln(50,32,50,66)+ln(50,36,36,28)+ln(36,28,36,40)+ln(50,36,64,28)+ln(64,28,64,40)+db(36,40)+db(64,40)+musc(43,33)+musc(57,33)+arr(50,50,50,32)),
+  "ombro lateral":svg(hd(50,28)+ln(50,34,50,66)+ln(50,38,30,38)+ln(30,38,30,30)+ln(50,38,70,38)+ln(70,38,70,30)+db(30,30)+db(70,30)+musc(40,37)+musc(60,37)+arr(30,50,30,34)+arr(70,50,70,34)),
+  "deltoide anterior":svg(hd(50,28)+ln(50,34,50,68)+ln(50,40,50,22)+db(50,22)+musc(45,36)+musc(55,36)+arr(64,54,58,32)),
+  "tríceps":svg(hd(50,22)+ln(50,28,50,60)+ln(50,32,60,48)+ln(60,48,60,62)+db(60,62)+musc(55,44)+arr(66,50,66,64)),
+  "tríceps cabeça longa":svg(hd(50,26)+ln(50,32,50,64)+ln(50,36,58,26)+ln(58,26,50,20)+db(50,20)+musc(55,32)+arr(64,26,58,20)),
+  "dorsal":svg(bar(28,20,72,20)+pl(28,20)+pl(72,20)+ln(36,20,44,40)+ln(64,20,56,40)+hd(50,46)+ln(50,52,50,78)+musc(42,44)+musc(58,44)+arr(78,28,78,44)),
+  "dorsal/meio das costas":svg(hd(40,30)+ln(40,36,40,64)+ln(40,42,62,46)+ln(62,46,48,44)+bar(60,44,78,44)+pl(78,44)+musc(48,42)+arr(72,52,52,50)),
+  "quadríceps/glúteo":svg(bar(34,26,66,26)+pl(34,26)+pl(66,26)+hd(50,38)+ln(50,44,50,58)+ln(50,58,38,72)+ln(38,72,38,86)+ln(50,58,62,72)+ln(62,72,62,86)+musc(44,64)+musc(56,64)+arr(74,60,74,44)),
+  "quadríceps":svg(`<rect x="20" y="40" width="30" height="18" rx="3" fill="${M}"/>`+hd(30,30)+ln(30,36,30,44)+ln(30,50,60,54)+ln(60,54,60,70)+pl(60,72)+musc(48,52)+arr(70,66,66,54)),
+  "posterior de coxa":svg(`<rect x="18" y="34" width="40" height="12" rx="3" fill="${M}"/>`+ln(24,46,58,46)+ln(58,46,66,66)+pl(66,68)+musc(60,56)+arr(72,66,66,50)),
+  "panturrilha":svg(hd(50,24)+ln(50,30,50,58)+ln(50,58,44,80)+ln(50,58,56,80)+ln(40,84,48,84)+ln(52,84,60,84)+musc(46,72)+musc(54,72)+arr(66,80,66,64)),
+  "bíceps":svg(hd(50,24)+ln(50,30,50,62)+ln(50,34,40,50)+ln(40,50,44,38)+ln(50,34,60,50)+ln(60,50,56,38)+bar(32,38,68,38)+pl(32,38)+pl(68,38)+musc(44,44)+musc(56,44)+arr(74,46,74,36)),
+  "bíceps cabeça longa":svg(`<line x1="22" y1="80" x2="58" y2="34" stroke="${M}" stroke-width="5" stroke-linecap="round"/>`+hd(52,32)+ln(48,38,30,72)+ln(38,54,32,68)+ln(38,54,46,40)+db(46,40)+musc(42,48)+arr(52,54,50,40)),
+  "braquial/braquiorradial":svg(hd(50,24)+ln(50,30,50,62)+ln(50,34,40,52)+ln(40,52,44,38)+ln(50,34,60,52)+ln(60,52,56,38)+db(42,38)+db(58,38)+musc(43,45)+musc(57,45)+arr(66,48,62,38)),
+  "bíceps ventre":svg(hd(38,26)+ln(38,32,38,58)+ln(20,52,72,58,M,4)+ln(38,38,55,50)+ln(55,50,66,40)+db(66,40)+musc(48,45)+arr(72,46,72,34)),
+  "bíceps pico":svg(hd(34,30)+ln(34,36,40,58)+ln(38,46,52,62)+ln(52,62,60,48)+db(60,48)+musc(46,54)+arr(66,54,64,42)),
+};
+function illOf(alvo){return ART[alvo]||svg(`<path d="M35 62 L50 36 L65 62 Z" fill="none" stroke="${A}" stroke-width="2.5"/>`);}
+
+/* ============ ESTADO ============ */
+let curDay=0;
+let dayState={};   // {exIdx: {sets:[{done,secs}], }}
+let totalSecs=0, totalRunning=false, totalInt=null;
+let restInt=null, rSec=0, rTot=0;
+let activeSet=null; // {ex, set, int, secs, el}
+
+function initDayState(){
+  dayState={};
+  DIAS[curDay].ex.forEach((e,i)=>{
+    dayState[i]={sets:Array.from({length:e.s},()=>({done:false,secs:0}))};
+  });
+}
+
+/* ============ RENDER SELETOR DIAS ============ */
+const daysEl=document.getElementById("days");
+function renderDays(){
+  daysEl.innerHTML="";
+  DIAS.forEach((d,i)=>{
+    const el=document.createElement("div");
+    el.className="day"+(i===curDay?" active":"");
+    el.style.setProperty("--tabcol",d.cor);
+    el.innerHTML=`<div class="dn">Dia ${i+1}</div><div class="dt">${d.nome}</div>`;
+    el.onclick=()=>{curDay=i;initDayState();renderDay();renderDays();window.scrollTo({top:0});};
+    daysEl.appendChild(el);
+  });
+}
+
+/* ============ RENDER DIA ============ */
+const app=document.getElementById("app"), dayhead=document.getElementById("dayhead");
+function renderDay(){
+  const d=DIAS[curDay];
+  document.documentElement.style.setProperty("--daycol",d.cor);
+  const totSets=d.ex.reduce((a,e)=>a+e.s,0);
+  const estMin=Math.round(d.ex.reduce((a,e)=>a+e.s*(e.rest+40),0)/60);
+  dayhead.innerHTML=`<div class="eye" style="color:${d.cor}">Dia ${curDay+1} · Hipertrofia</div>
+    <h1>${d.nome}</h1>
+    <div style="color:var(--mut);font-size:13px">${d.sub}</div>
+    <div class="stats">
+      <div><b>${d.ex.length}</b>exercícios</div>
+      <div><b>${totSets}</b>séries</div>
+      <div><b>~${estMin}</b>min estimado</div>
+    </div>`;
+  app.innerHTML="";
+  document.getElementById("fin").classList.remove("show");
+
+  d.ex.forEach((e,i)=>{
+    const card=document.createElement("div");
+    card.className="ex";card.id=`ex${i}`;
+    const star=e.dica.includes("⭐")?' <span class="star">★</span>':'';
+    let rows="";
+    for(let s=0;s<e.s;s++){
+      rows+=`<div class="setrow" id="sr-${i}-${s}">
+        <span class="idx">Série ${s+1}</span>
+        <span class="target">${e.reps} reps</span>
+        <span class="stimer" id="st-${i}-${s}">0:00</span>
+        <button class="act start" id="ab-${i}-${s}" onclick="setAction(${i},${s})">Iniciar</button>
+      </div>`;
+    }
+    card.innerHTML=`
+      <div class="ex-head">
+        <img class="ill" src="${illOf(e.alvo)}" alt="Ilustração ${e.n}">
+        <div class="ex-meta">
+          <div class="ex-n">${e.n}${star}</div>
+          <span class="ex-tag">${e.alvo}</span>
+          <div class="ex-sch"><b>${e.s}×${e.reps}</b> · descanso <b>${e.rest}s</b></div>
+        </div>
+      </div>
+      <button class="toggle-exe" onclick="toggleExe(${i})">▸ Execução e dicas</button>
+      <div class="exe" id="exe-${i}">
+        <div class="row"><div class="k">Execução</div><div class="v">${e.exe}</div></div>
+        <div class="row"><div class="k">Dica</div><div class="v dica">${e.dica.replace("⭐","")}</div></div>
+      </div>
+      <div class="sets">${rows}</div>`;
+    app.appendChild(card);
+  });
+}
+function toggleExe(i){document.getElementById(`exe-${i}`).classList.toggle("open");}
+
+/* ============ AÇÃO DA SÉRIE (cronômetro por série) ============ */
+function setAction(ex,set){
+  const st=dayState[ex].sets[set];
+  const btn=document.getElementById(`ab-${ex}-${set}`);
+  const row=document.getElementById(`sr-${ex}-${set}`);
+
+  // já feita → refazer
+  if(st.done){
+    st.done=false;st.secs=0;
+    row.classList.remove("done");
+    document.getElementById(`st-${ex}-${set}`).textContent="0:00";
+    btn.className="act start";btn.textContent="Iniciar";
+    checkDone();return;
+  }
+
+  // está ativa → finalizar série + iniciar descanso
+  if(activeSet && activeSet.ex===ex && activeSet.set===set){
+    clearInterval(activeSet.int);
+    st.secs=activeSet.secs;st.done=true;
+    row.classList.remove("active");row.classList.add("done");
+    btn.className="act redo";btn.textContent="Refazer";
+    activeSet=null;
+    if(!totalRunning) toggleClock(); // garante relógio rodando
+    startRest(DIAS[curDay].ex[ex].rest, DIAS[curDay].ex[ex].n);
+    checkDone();return;
+  }
+
+  // inicia esta série (para outra ativa se houver)
+  if(activeSet){
+    clearInterval(activeSet.int);
+    const p=dayState[activeSet.ex].sets[activeSet.set];
+    p.secs=activeSet.secs;
+    document.getElementById(`sr-${activeSet.ex}-${activeSet.set}`).classList.remove("active");
+    document.getElementById(`ab-${activeSet.ex}-${activeSet.set}`).className="act start";
+    document.getElementById(`ab-${activeSet.ex}-${activeSet.set}`).textContent="Iniciar";
+  }
+  if(!totalRunning) toggleClock();
+  row.classList.add("active");
+  btn.className="act finish";btn.textContent="Concluir";
+  const stEl=document.getElementById(`st-${ex}-${set}`);
+  activeSet={ex,set,secs:0,int:null};
+  activeSet.int=setInterval(()=>{
+    activeSet.secs++;
+    stEl.textContent=fmt(activeSet.secs);
+  },1000);
+}
+
+/* ============ RELÓGIO TOTAL ============ */
+function toggleClock(){
+  totalRunning=!totalRunning;
+  const b=document.getElementById("clockBtn");
+  if(totalRunning){
+    b.textContent="⏸";b.classList.add("paused");
+    totalInt=setInterval(()=>{totalSecs++;document.getElementById("totalClock").textContent=fmt(totalSecs);},1000);
+  }else{
+    b.textContent="▶";b.classList.remove("paused");clearInterval(totalInt);
+  }
+}
+
+/* ============ DESCANSO ============ */
+const restEl=document.getElementById("rest"),rnum=document.getElementById("rnum"),
+      rfill=document.getElementById("rfill"),restLab=document.getElementById("restLab");
+function startRest(sec,name){
+  clearInterval(restInt);rSec=sec;rTot=sec;
+  restLab.textContent="Descanso · "+name;
+  restEl.classList.add("show");drawRest();
+  restInt=setInterval(()=>{rSec--;drawRest();if(rSec<=0){clearInterval(restInt);beep();skipRest();}},1000);
+}
+function drawRest(){rnum.textContent=rSec;rnum.classList.toggle("low",rSec<=10);rfill.style.width=(rSec/rTot*100)+"%";}
+function addRest(s){rSec=Math.max(1,rSec+s);rTot=Math.max(rTot,rSec);drawRest();}
+function skipRest(){clearInterval(restInt);restEl.classList.remove("show");}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();
+  const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
+  o.frequency.value=880;g.gain.setValueAtTime(.3,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.6);o.start();o.stop(c.currentTime+.6);}catch(e){}}
+
+/* ============ CONCLUSÃO ============ */
+function checkDone(){
+  const all=DIAS[curDay].ex.every((e,i)=>dayState[i].sets.every(s=>s.done));
+  const fin=document.getElementById("fin");
+  if(all){
+    fin.classList.add("show");
+    document.getElementById("finTime").textContent=fmt(totalSecs);
+    if(totalRunning) toggleClock();
+  }else fin.classList.remove("show");
+}
+function resetDay(){
+  if(activeSet){clearInterval(activeSet.int);activeSet=null;}
+  initDayState();renderDay();skipRest();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ============ util ============ */
+function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+":"+String(ss).padStart(2,"0");}
+
+/* ============ start ============ */
+initDayState();renderDays();renderDay();
+</script>
+</body>
+</html>
